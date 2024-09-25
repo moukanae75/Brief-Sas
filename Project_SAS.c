@@ -26,7 +26,7 @@ typedef struct {
     char categorie[50];
     char status[20];// 1: "en cours",2: "résolue", ou 3: "fermée".
     Date date;
-    Date traitment_date;
+    time_t traitment_date;
     time_t rec_date;
     char client[50];
     char priority[50];
@@ -555,22 +555,13 @@ void traiterReclamation(int id,User *user_menu) {
                 strcpy(rec[i].status,"en cours");
                 break;
             case 2:
+                
                 strcpy(rec[i].status,"resolue");
-                rec[i].traitment_date.sec = tm.tm_sec;
-                rec[i].traitment_date.min = tm.tm_min;
-                rec[i].traitment_date.heur = tm.tm_hour;
-                rec[i].traitment_date.jour = tm.tm_mday;
-                rec[i].traitment_date.moi = tm.tm_mon + 1;
-                rec[i].traitment_date.jour = tm.tm_year + 1900;
+                time(&rec[i].traitment_date);
                 break;
             case 3:
                 strcpy(rec[i].status,"rejeter");// en cours  resolue   rejeter
-                rec[i].traitment_date.sec = tm.tm_sec;
-                rec[i].traitment_date.min = tm.tm_min;
-                rec[i].traitment_date.heur = tm.tm_hour;
-                rec[i].traitment_date.jour = tm.tm_mday;
-                rec[i].traitment_date.moi = tm.tm_mon + 1;
-                rec[i].traitment_date.jour = tm.tm_year + 1900;
+                time(&rec[i].traitment_date);
                 break;
             default:
                 printf("Invalide choix");
@@ -785,7 +776,7 @@ void afficherStatistiques() {
         menu_admin();
     }
     
-    for (int i = 0; i <= IndexRec; i++) {
+    for (int i = 0; i < IndexRec; i++) {
         if (rec[i].id == 404)
         {
             supp++;
@@ -808,18 +799,23 @@ void afficherStatistiques() {
     printf("Nombre de reclamations en cours : %d\n", en_cours);
     printf("Nombre de reclamations resolues : %d\n", resolues);
     printf("Nombre de reclamations rejeter : %d\n", rejeter);
-    printf("Taux de resolution : %.2f%%\n", (resolues / (float)totalReclamations) * 100);
-    for (int i = 0; i <= IndexRec; i++)
+    printf("Taux de resolution : %.2f%%\n", (resolues / ((float)totalReclamations - supp)) * 100);
+    for (int i = 0; i < IndexRec; i++)
     {
         if (strcmp(rec[i].status,"resolue")==0 || strcmp(rec[i].status,"rejeter")==0 )
         {
+            
 
+            if (rec[i].id != 404)
+            {
+                double delai = difftime(rec[i].traitment_date,rec[i].rec_date);
+
+                total_delai += delai;
+                count++;
+            }
             
             
-           double delai = difftime(rec[i].date.sec,rec[i].traitment_date.sec);
-
-           total_delai += delai;
-           count++;
+           
            
         }
         
@@ -863,6 +859,10 @@ void* Rapport_journalier() {
                 fprintf(ptr,"Description: %s\n", rec[i].description);
                 fprintf(ptr,"Categorie: %s\n", rec[i].categorie);
                 fprintf(ptr,"Status: %s\n", rec[i].status);
+                if (strcmp(rec[i].status,"en cours") != 0)
+                {
+                fprintf(ptr,"Note : %s\n",rec[i].notes);
+                }
                 fprintf(ptr,"Date: %d/%d/%d\n", rec[i].date.jour,rec[i].date.moi,rec[i].date.anne);
                 fprintf(ptr,"Client: %s\n\n", rec[i].client);
             }
