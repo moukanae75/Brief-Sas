@@ -79,19 +79,30 @@ void afficherStatistiques();
 void displayMenu() {
     system("cls");
     printf("\n\t\tSYSTEM DE GESTION DES RECLAMTIONS");
-    printf("\n\n\n\t1. Conenxion\t\t2. Inscription \n\n\t3.Quitter\n\n\n\t\t\t Enter your choice : ");
+    printf("\n\n\n\t1. Conenxion\t\t2. Inscription \n\n\t3. Quitter\n\n\n\t\t\t Enter your choice : ");
 }
-
-
 
 void signUp(User *user) {
     strcpy(users[0].username,"admin");
     strcpy(users[0].password,"admin@2024");
     users[0].role = 1;
-
     printf("Inscription:\n");
+    Invalid_username156:
     printf("Entrez votre nom d'utilisateur: ");
     scanf("%s", user-> username);
+    for (int i = 0; i< Indexfree ; i++)
+    {
+        
+        if (strcmp(users[i].username,user->username) == 0)
+        {
+             printf("Ce username est deja utiliser.\n");
+        
+            goto Invalid_username156;
+            
+        }
+        
+    }
+
     Invalid_signUP_pass:
     printf("Entrez votre mot de passe: ");
     scanf("%s", user-> password);
@@ -105,7 +116,7 @@ void signUp(User *user) {
     toLowerCase(temp_user);
     toLowerCase(temp_pass);
 
-    printf("%s \n%s\n", temp_user, temp_pass);
+    //printf("%s \n%s\n", temp_user, temp_pass);
     fordelay();
     if (strstr(temp_pass,temp_user) != NULL)
     {
@@ -148,7 +159,7 @@ bool isCorrect_MDP(char *mdp) {
         }
     }
     printf("%d-%d-%d-%d-%d\n", car, alph_LOW, alph_UP, num,strlen(mdp));
-    return car && alph_UP && alph_LOW && num && strlen(mdp) <= 8;
+    return car && alph_UP && alph_LOW && num && strlen(mdp) >= 8;
 }
 
 // Fonction pour la connexion
@@ -166,59 +177,73 @@ int* signIn(User *user) {
         while (anti_spam < 3) {
         printf("Connexion:\n");
         printf("Entrez votre nom d'utilisateur: ");
-        scanf("%s", username);
-        for (int i = 0; i <= Indexfree; i++)
+        scanf(" %[^\n]s", username);
+        for (int i = 0; i < Indexfree; i++)
         {
             if (strcmp(users[i].username,username)==0)
             {
                 user_found = 1;
+
                 break;
             }
             
         }
         if (user_found == 0)
         {
+            printf("Invalid username, rest %d tentatife\n", 2 - anti_spam);
             anti_spam++;
             continue;
         }
         Invalid_paaaaass:
         printf("Entrez votre mot de passe: ");
         
-        scanf("%s", password);
-        int role;
+        scanf(" %[^\n]s", password);
+        int role,index;
         //checker le nombre de failde de mdp aprés 3 essey va veilleiz 180
-        for (int i = 0; i <= Indexfree; i++) {
+        for (int i = 0; i < Indexfree; i++) {
         if (strcmp(users[i].username, username) == 0) {
+            index = i;
             time_t current_time = time(NULL);
-            if (users[i].failed_attempts == 3 && difftime(current_time, users[i].lockout_time) < 180) {
-                printf("Compte verrouille. Veuillez reessayer apres %d secondes.\n", (int)(180 - difftime(current_time, users[i].lockout_time)));
-                fordelay();
-                main();
-                return 0;
-            }
-            if (strcmp(users[i].password, password) == 0) {
-                users[i].failed_attempts = 0;
-                printf("Connexion reussie. Bienvenue, %s!\n", users[i].username);
-                break;
-            } else {
-                users[i].failed_attempts++;
-                if (users[i].failed_attempts >= 3) {
-                    users[i].lockout_time = current_time;
-                    printf("Compte verrouille apres %d tentatives echouees. Veuillez reessayer apres %d secondes.\n", 3, 180);
-                    fordelay();
-                    main();
-                    return 0;
-                } else {
-                    printf("Identifiant ou mot de passe incorrect. Tentatives restantes : %d\n", 3 - users[i].failed_attempts);
-                    anti_spam++;
-                    goto Invalid_paaaaass;
-                }
+            if (anti_spam == 3) {
+                //printf("Compte verrouille. Veuillez reessayer apres %d secondes.\n", (int)(180 - difftime(current_time, users[i].lockout_time)));
+                // fordelay();
+                // main();
+                anti_spam = 0;
+                server_down();
                 
             }
+            // if (strcmp(users[i].password, password) == 0) {
+            //     users[i].failed_attempts = 0;
+            //     printf("Connexion reussie. Bienvenue, %s!\n", users[i].username);
+            //     break;
+            // } else {
+            //     users[i].failed_attempts++;
+            //     if (users[i].failed_attempts >= 3) {
+            //         users[i].lockout_time = current_time;
+            //         printf("Compte verrouille apres %d tentatives echouees. Veuillez reessayer apres %d secondes.\n", 3, 180);
+            //         fordelay();
+            //         main();
+                    
+            //     } else {
+            //         printf("Identifiant ou mot de passe incorrect. Tentatives restantes : %d\n", 3 - users[i].failed_attempts);
+            //         anti_spam++;
+            //         goto Invalid_paaaaass;
+            //     }
+                
+            // }
         }
+        
+        }
+        if (strcmp(users[index].password, password) != 0)
+        {
+             printf("Identifiant ou mot de passe incorrect. Tentatives restantes : %d\n", 3 - anti_spam);
+                    anti_spam++;
+                    goto Invalid_paaaaass;
+        }else {
+            anti_spam = 0;
         }
         //checker le role du persone qui connecter correctement
-        for (int i = 0; i <= Indexfree; i++)
+        for (int i = 0; i < Indexfree; i++)
         {
             if ((strcmp(users[i].username, username) == 0 && strcmp(users[i].password, password) == 0))
             {
@@ -270,6 +295,7 @@ int* signIn(User *user) {
     
     result[0] = cote;
     result[1] = index_user;
+    anti_spam = 0;
     printf("SingIn succesfule");
     fordelay();
 
@@ -461,7 +487,7 @@ void modifierReclamation(int id,User *user_menu) {
             }
             printf("Reclamation modifiee avec succes.\n");
             Invalid_choix_modif_admin_reclamation:
-            printf("Entrer 0 pour retourner au menu : ");
+            printf("\nEntrer 0 pour retourner au menu : ");
             scanf("%d",&choix1);
             if (choix1 == 0)
             {
@@ -558,6 +584,8 @@ void traiterReclamation(int id,User *user_menu) {
             scanf("%d",&choix2);
             if (choix2 == 0)
             {
+                printf("%d",user_menu->role);
+                Sleep(5000);
                 if (user_menu->role == 2)
                 {
                     menu_ajent(user_menu);
@@ -571,6 +599,7 @@ void traiterReclamation(int id,User *user_menu) {
         }
     }
     printf("Reclamation non trouvee.\n");
+    goto Invalid_choix_retourn_trait_rec;
 }
 
 void rechercherReclamation(int id,User *user_menu) {
@@ -817,7 +846,7 @@ void afficherStatistiques() {
 }
 void* Rapport_journalier() {
     while (1) {
-        FILE *ptr = fopen("rapport.txt", "a+");
+        FILE *ptr = fopen("rapport.txt", "w");
         if (ptr == NULL) {
             perror("Erreur lors de l'ouverture du fichier");
             return NULL;
@@ -828,7 +857,7 @@ void* Rapport_journalier() {
         fprintf(ptr, "Rapport de : %d/%d/%d %d:%d:%d\n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
         for (int i = 0; i < IndexRec; i++) {
-            if (rec[i].date.jour == tm.tm_mday) {
+            if (rec[i].date.jour == tm.tm_mday && rec[i].id != 404) {
                 fprintf(ptr,"ID: %d\n", rec[i].id);
                 fprintf(ptr,"Motif: %s\n", rec[i].motif);
                 fprintf(ptr,"Description: %s\n", rec[i].description);
@@ -1210,12 +1239,21 @@ void fordelay() {
         Sleep(1000);
     }
 }
-
+bool first = true ;
 int main() {
     pthread_t thread_id;
+                    //             //void*          //argument qui va passer au void*
     pthread_create(&thread_id, NULL, Rapport_journalier, NULL);
+    //pthread_join(thread1,NULL) NULL : retourn du void* 
     system("cls");
-    //GESTION_recla();
+    
+    
+    if (first)
+    {
+        GESTION_recla();
+        first = false;
+    }
+
     system("cls");
 
     User user;
